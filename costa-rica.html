@@ -1,17 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Costa Rica Retreat</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Costa Rica Retreat | Jordan Nicholls</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header>
-    <h1>Welcome to the Costa Rica Retreat</h1>
+
+  <!-- Header / Nav -->
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo"><a href="index.html">Jordan Nicholls</a></h1>
+      <nav class="main-nav">
+        <a href="index.html">Home</a>
+        <a href="costa-rica.html" class="active">Costa Rica Retreat</a>
+      </nav>
+    </div>
   </header>
-  <main>
-    <p>All the details about our retreat in Costa Rica go here...</p>
-  </main>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <h2>Transform Your Mind, Body, and Spirit</h2>
+        <p>Join us in Costa Rica for a rejuvenating retreat focused on health, fitness, mindfulness, and reconnecting with nature.</p>
+        <a href="#contact" class="button">Reserve Your Spot</a>
+      </div>
+      <div class="hero-media">
+        <img src="images/costa-hero.jpg" alt="Costa Rica Retreat" style="width:100%; height:100%; object-fit:cover; border-radius:16px;">
+      </div>
+    </div>
+  </section>
+
+  <!-- Details Section -->
+  <section class="section">
+    <div class="container">
+      <h3>What’s Included</h3>
+      <ul>
+        <li>Daily yoga, meditation, and fitness sessions</li>
+        <li>Healthy, locally sourced meals</li>
+        <li>Luxury accommodations in a tropical paradise</li>
+        <li>Excursions to waterfalls, beaches, and rainforests</li>
+        <li>Workshops on nutrition, mindset, and personal growth</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Gallery Section -->
+  <section class="section">
+    <div class="container">
+      <h3>Retreat Highlights</h3>
+      <div class="grid">
+        <img src="images/costa1.jpg" alt="Beach">
+        <img src="images/costa2.jpg" alt="Yoga Deck">
+        <img src="images/costa3.jpg" alt="Waterfall">
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact / Call to Action -->
+  <section class="section" id="contact">
+    <div class="container">
+      <h3>Reserve Your Spot</h3>
+      <p>Spaces are limited. Fill out the form below to request more details.</p>
+      <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST" class="contact-form">
+        <input type="text" name="name" placeholder="Your Name" required />
+        <input type="email" name="email" placeholder="Your Email" required />
+        <textarea name="message" placeholder="Tell us about your goals for the retreat"></textarea>
+        <button type="submit" class="button">Send Inquiry</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; 2025 Jordan Nicholls. All rights reserved.</p>
+    </div>
+  </footer>
+
 </body>
 </html>
