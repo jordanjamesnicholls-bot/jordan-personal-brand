@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sushi Catch — Mini Game</title>
+  <meta name="description" content="Catch the sushi, dodge the wasabi! A tiny arcade game by Jordan Nicholls.">
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+  <style>
+    :root{
+      --bg:#0e0f12; --card:#14161b; --muted:#9aa3b2; --text:#f5f7fb;
+      --brand:#6ee7b7; --brand2:#60a5fa;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:radial-gradient(1200px 700px at 90% -10%, rgba(110,231,183,.15), transparent 60%),
+                 radial-gradient(800px 500px at -10% 10%, rgba(96,165,250,.10), transparent 40%), var(--bg);
+      color:var(--text); font:16px/1.6 Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    }
+    header{width:min(1100px,92%); margin:18px auto 0; display:flex; align-items:center; justify-content:space-between; gap:12px}
+    header .title{font-weight:800}
+    header .actions{display:flex; gap:8px; flex-wrap:wrap}
+    .btn{padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.16); font-weight:600; background:transparent; color:var(--text); cursor:pointer}
+    .btn.primary{background:linear-gradient(90deg, var(--brand), var(--brand2)); color:#0b0c10; border:none}
+    .btn:disabled{opacity:.6; cursor:not-allowed}
+    main{width:min(1100px,92%); margin:12px auto 24px; display:grid; grid-template-columns: 1fr 320px; gap:16px}
+    @media (max-width: 980px){ main{grid-template-columns:1fr} }
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.10); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    #wrap{position:relative; padding:8px}
+    canvas{display:block; width:100%; height:auto; border-radius:12px; background:#0b0c10; box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+    #hud{padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; font-weight:700}
+    #hud .score{font-size:1.1rem}
+    #hud .status{font-size:.95rem; color:var(--muted)}
+    #sidebar{padding:14px}
+    #sidebar h2{margin:6px 0 6px; font-size:1.1rem}
+    #sidebar p{margin:0 0 10px; color:var(--muted); font-size:.95rem}
+    .key{display:inline-block; padding:2px 6px; border:1px solid rgba(255,255,255,.25); border-radius:6px; font-size:.85rem}
+    .stat{display:flex; align-items:center; justify-content:space-between; margin:6px 0}
+    footer{margin:16px 0 28px; color:var(--muted); font-size:.9rem}
+    .centerOverlay{
+      position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+      pointer-events:none;
+    }
+    .overlayCard{
+      pointer-events:auto; text-align:center; padding:18px; width:min(520px, 92%);
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03));
+      border:1px solid rgba(255,255,255,.14); border-radius:16px;
+      box-shadow:0 20px 60px rgba(0,0,0,.45);
+    }
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+    a { color: var(--text); }
+    .hide{display:none}
+    /* Game specific */
+    .hero-media{ position:relative; height:360px; border-radius:16px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+    @media (max-width: 980px){ .hero-media{ height:220px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">🍣 Sushi Catch — Mini Game</div>
+    <div class="actions">
+      <button id="btnStart" class="btn primary">Start</button>
+      <button id="btnPause" class="btn">Pause</button>
+      <button id="btnReset" class="btn">Reset</button>
+      <a href="index.html" class="btn">← Back to site</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="card" id="wrap">
+      <div id="hud">
+        <div class="score">Score: <span id="score">0</span></div>
+        <div class="status">Level <span id="level">1</span> • Lives <span id="lives">3</span> • Best <span id="best">0</span></div>
+      </div>
+      <canvas id="game" width="900" height="520"></canvas>
+
+      <div id="overlay" class="centerOverlay">
+        <div class="overlayCard">
+          <h2>Catch the Sushi, Dodge the Wasabi! 🥢</h2>
+          <p>Move the plate, catch sushi to score. Avoid wasabi bombs. Survive as it speeds up.</p>
+          <p><span class="key">←</span> <span class="key">→</span> or <span class="key">A</span>/<span class="key">D</span> to move • <span class="key">Space</span> to start/pause</p>
+          <div style="margin-top:10px">
+            <button id="btnStart2" class="btn primary">Play</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside id="sidebar" class="card">
+      <h2>How to Play</h2>
+      <p>• Catch sushi for +10 points.<br>• Miss sushi or catch a wasabi bomb and lose a life.<br>• Every 5 sushi caught: speed increases.</p>
+      <div class="stat"><span>Controls</span><span class="mono">← →  A D</span></div>
+      <div class="stat"><span>Pause</span><span class="mono">Space</span></div>
+      <div class="stat"><span>Reset</span><span class="mono">R</span></div>
+      <hr style="border-color: rgba(255,255,255,.1)">
+      <p>Tip: On mobile, drag your finger to move the plate.</p>
+    </aside>
+  </main>
+
+  <footer>
+    Built for fun by Jordan Nicholls’s site visitors. No downloads. No trackers.
+  </footer>
+
+  <script>
+  (()=>{
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const levelEl = document.getElementById('level');
+    const livesEl = document.getElementById('lives');
+    const bestEl = document.getElementById('best');
+    const overlay = document.getElementById('overlay');
+    const btnStart = document.getElementById('btnStart');
+    const btnStart2 = document.getElementById('btnStart2');
+    const btnPause = document.getElementById('btnPause');
+    const btnReset = document.getElementById('btnReset');
+
+    const W = canvas.width, H = canvas.height;
+    // game state
+    let running = false, paused = false;
+    let score = 0, level = 1, lives = 3, best = +localStorage.getItem('sushi_best')||0;
+    bestEl.textContent = best;
+
+    // player
+    const plate = { w: 120, h: 18, x: W/2 - 60, y: H - 40, speed: 9, vx: 0 };
+
+    // entities
+    const items = []; // falling items
+    let spawnTimer = 0;
+    let spawnInterval = 75; // frames
+    const sushiKinds = [
+      ['#f7e3b5', '#f59e0b'],
+      ['#fca5a5', '#ef4444'],
+      ['#a7f3d0', '#10b981'],
+      ['#93c5fd', '#3b82f6'],
+      ['#fde68a', '#f59e0b'],
+    ];
+
+    const rand = (a,b)=> Math.random()*(b-a)+a;
+    const chance = p => Math.random()<p;
+
+    function reset(){
+      running=false; paused=false; score=0; level=1; lives=3;
+      spawnTimer=0; spawnInterval=75; items.length=0;
+      plate.x = W/2 - plate.w/2; plate.vx=0;
+      updateHUD();
+      showOverlay(true);
+    }
+
+    function updateHUD(){
+      scoreEl.textContent = Math.floor(score);
+      levelEl.textContent = level;
+      livesEl.textContent = lives;
+      if(score>best){ best=score; localStorage.setItem('sushi_best', best); }
+      bestEl.textContent = best;
+    }
+
+    function showOverlay(v){ overlay.style.display = v ? 'flex' : 'none'; }
+
+    function drawBackground(){
+      ctx.fillStyle = '#0b0c10';
+      ctx.fillRect(0,0,W,H);
+      ctx.strokeStyle = 'rgba(255,255,255,.05)';
+      ctx.lineWidth = 1;
+      for(let x=0; x<W; x+=30){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+      for(let y=0; y<H; y+=30){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    }
+
+    function drawPlate(){
+      const r = 12;
+      ctx.fillStyle = '#e5e7eb';
+      roundRect(ctx, plate.x, plate.y, plate.w, plate.h, r, true);
+      ctx.strokeStyle = 'rgba(0,0,0,.25)';
+      ctx.lineWidth = 2;
+      roundRect(ctx, plate.x, plate.y, plate.w, plate.h, r, false);
+    }
+
+    function spawnItem(){
+      const isWasabi = chance(0.15 + Math.min(0.15, level*0.01));
+      const kind = sushiKinds[Math.floor(Math.random()*sushiKinds.length)];
+      const size = rand(20, 28);
+      items.push({
+        x: rand(20, W-20), y: -size, vy: rand(2.2, 3.2) + level*0.2,
+        size, kind, isWasabi
+      });
+    }
+
+    function updateItems(){
+      for(let i=items.length-1; i>=0; i--){
+        const it = items[i];
+        it.y += it.vy;
+        // collision with plate
+        if(it.y + it.size >= plate.y && it.y <= plate.y + plate.h &&
+           it.x >= plate.x && it.x <= plate.x + plate.w){
+          if(it.isWasabi){
+            lives -= 1;
+            flash('#10b981');
+          }else{
+            score += 10;
+            if(score % 50 === 0){ level += 1; spawnInterval = Math.max(35, spawnInterval-5); }
+            flash('#f59e0b');
+          }
+          items.splice(i,1);
+          updateHUD();
+          if(lives<=0){ gameOver(); }
+          continue;
+        }
+        // missed
+        if(it.y > H + 40){
+          if(!it.isWasabi){ lives -= 1; updateHUD(); if(lives<=0){ gameOver(); } }
+          items.splice(i,1);
+        }
+      }
+    }
+
+    function drawItems(){
+      for(const it of items){
+        if(it.isWasabi){
+          drawWasabi(it.x, it.y, it.size);
+        }else{
+          drawSushi(it.x, it.y, it.size, it.kind[0], it.kind[1]);
+        }
+      }
+    }
+
+    function drawSushi(x,y,s,fill,accent){
+      ctx.fillStyle = '#fff'; roundRect(ctx, x-s, y-s*0.6, s*2, s*1.2, 8, true);
+      ctx.fillStyle = '#111827'; ctx.fillRect(x-s*0.2, y-s*0.6, s*0.4, s*1.2);
+      ctx.fillStyle = fill; roundRect(ctx, x-s*0.9, y-s*0.9, s*1.8, s*0.6, 8, true);
+      ctx.fillStyle = accent; ctx.globalAlpha = 0.25; roundRect(ctx, x-s*0.9, y-s*0.9, s*1.8, s*0.6, 8, true); ctx.globalAlpha=1;
+    }
+
+    function drawWasabi(x,y,s){
+      ctx.fillStyle = '#10b981';
+      ctx.beginPath();
+      ctx.arc(x, y, s*0.8, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle='rgba(0,0,0,.25)';
+      ctx.beginPath();
+      ctx.arc(x, y, s*0.5, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    let flashAlpha = 0, flashColor = '#fff';
+    function flash(color){ flashAlpha = 0.25; flashColor = color; }
+    function drawFlash(){
+      if(flashAlpha>0){
+        ctx.fillStyle = hexToRgba(flashColor, flashAlpha);
+        ctx.fillRect(0,0,W,H); flashAlpha -= 0.02;
+      }
+    }
+
+    function gameOver(){
+      running=false; paused=false;
+      showOverlay(true);
+      overlay.querySelector('h2').textContent = 'Game Over';
+      overlay.querySelector('p').textContent = 'Final score: ' + score + ' • Level ' + level + '. Press Play to try again.';
+    }
+
+    function tick(){
+      if(!running || paused) return;
+      drawBackground();
+      plate.x += plate.vx;
+      plate.x = Math.max(0, Math.min(W-plate.w, plate.x));
+      drawPlate();
+      if(spawnTimer++ >= spawnInterval){ spawnItem(); spawnTimer=0; }
+      updateItems();
+      drawItems();
+      drawFlash();
+      requestAnimationFrame(tick);
+    }
+
+    function roundRect(ctx, x, y, w, h, r, fill=true){
+      ctx.beginPath();
+      ctx.moveTo(x+r, y);
+      ctx.arcTo(x+w, y, x+w, y+h, r);
+      ctx.arcTo(x+w, y+h, x, y+h, r);
+      ctx.arcTo(x, y+h, x, y, r);
+      ctx.arcTo(x, y, x+w, y, r);
+      ctx.closePath();
+      if(fill) ctx.fill(); else ctx.stroke();
+    }
+    function hexToRgba(hex, a){
+      const c = hex.replace('#','');
+      const b = parseInt(c,16);
+      const r = (b>>16)&255, g=(b>>8)&255, bl=b&255;
+      return `rgba(${r},${g},${bl},${a})`;
+    }
+
+    const keys = {};
+    addEventListener('keydown', e=>{
+      keys[e.key.toLowerCase()] = true;
+      if(e.code==='Space'){ paused = !paused; if(running && !paused) tick(); e.preventDefault(); }
+      if(e.key.toLowerCase()==='r'){ reset(); }
+    });
+    addEventListener('keyup', e=>{ keys[e.key.toLowerCase()] = false; });
+    function controlLoop(){
+      if(keys['arrowleft']||keys['a']) plate.vx = -plate.speed;
+      else if(keys['arrowright']||keys['d']) plate.vx = plate.speed;
+      else plate.vx = 0;
+      setTimeout(controlLoop, 16);
+    }
+    controlLoop();
+
+    function handleMove(clientX){
+      const rect = canvas.getBoundingClientRect();
+      const x = (clientX - rect.left) * (canvas.width/rect.width);
+      plate.x = Math.max(0, Math.min(canvas.width - plate.w, x - plate.w/2));
+    }
+    canvas.addEventListener('mousemove', e=> handleMove(e.clientX));
+    canvas.addEventListener('touchmove', e=>{ handleMove(e.touches[0].clientX); e.preventDefault(); }, {passive:false});
+
+    function startGame(){
+      if(!running){ reset(); running=true; showOverlay(false); tick(); }
+      else if(paused){ paused=false; tick(); }
+    }
+    btnStart.addEventListener('click', startGame);
+    btnStart2.addEventListener('click', startGame);
+    btnPause.addEventListener('click', ()=>{ paused=!paused; if(running && !paused) tick(); });
+    btnReset.addEventListener('click', reset);
+
+    reset();
+  })();
+  </script>
+</body>
+</html>
